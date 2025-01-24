@@ -1,4 +1,4 @@
-function [CL_C] = Comp_Effects(CL, V, h, Sweep)
+function [CL_C] = Comp_Effects_Real(CL, V, h, Sweep)
 % This function is used to calculate the lift coefficient
 % due to the compressibility effect using the Prandtl-Glauert Rule
 % for subsonic Mach numbers
