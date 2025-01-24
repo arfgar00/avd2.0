@@ -27,21 +27,19 @@ M = V_TAS / a;
 
 M_eff = M * cos(Sweep);
 
-CL_C = CL;
-
-% if M_eff <= 0.3
+if M_eff <= 0.3
     
-  % CL_C = CL;
+    CL_C = CL;
 
-% elseif M_eff <= 0.7
+elseif M_eff <= 0.7
+    
+    CL_C = CL ./ sqrt(1 - M_eff .^ 2);
 
-  % CL_C = CL ./ sqrt(1 - M_eff .^ 2);
+else
+    
+    CL_C = (CL ./ sqrt(1 - M_eff .^ 2)) ...
+        * (1 + (M_eff ./ (1 + sqrt(1 - M_eff .^ 2))));
 
-% else
-
-  % CL_C = (CL ./ sqrt(1 - M_eff .^ 2)) ...
-  % * (1 + M_eff ./ (1 + sqrt(1 - M_eff .^ 2)));
-
-% end
+end
 
 end
