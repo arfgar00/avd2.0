@@ -16,6 +16,8 @@ classdef wingbox
         As %area of one stringer
         sr_s0 %sigma_r/sigma_0, looked up from catchpole diagram, array
         N %number of panels on main cell
+        F %Farror factor, an array in spanwise
+        L %rib spacing, an array in spanwise
     end
 
     methods
@@ -142,5 +144,87 @@ classdef wingbox
             
             axis equal;
         end
+
+        function obj = interpsr_s0(obj, digitized_data, wing)
+            ts_t = obj.ts / obj.t2;  % Current ts/t ratio
+            As_bt = obj.As ./ (obj.b1_c .* wing.cn) ./ obj.t2;  % Current As/bt values
+        
+            % Extract and sort digitized_data by ts_t_ratio
+            ts_t_ratios = [digitized_data.ts_t_ratio];
+            [sorted_ts, sort_idx] = sort(ts_t_ratios);
+            digitized_data_sorted = digitized_data(sort_idx);
+        
+            % Create interpolants for each curve
+            for k = 1:length(digitized_data_sorted)
+                [x_sorted, idx] = sort(digitized_data_sorted(k).x_data);  % Sort x_data
+                y_sorted = digitized_data_sorted(k).y_data(idx);          % Align y_data
+                % Store interpolant in the struct
+                digitized_data_sorted(k).interpolant = griddedInterpolant(x_sorted, y_sorted, 'linear', 'none');
+            end
+        
+            % Find bounding ts/t ratios for interpolation
+            idx_lower = find(sorted_ts <= ts_t, 1, 'last');  % Nearest lower ts/t
+            idx_upper = find(sorted_ts >= ts_t, 1, 'first'); % Nearest upper ts/t
+        
+            % Handle edge cases (extrapolation)
+            if isempty(idx_lower)
+                idx_lower = 1;  % Use first curve if ts_t < min(ts_t_ratio)
+                idx_upper = 1;
+            elseif isempty(idx_upper)
+                idx_lower = length(sorted_ts);  % Use last curve if ts_t > max(ts_t_ratio)
+                idx_upper = length(sorted_ts);
+            end
+        
+            % Get interpolated y-values for each As_bt
+            for i = 1:length(As_bt)
+                x_query = As_bt(i);  % Current As/bt value to query
+        
+                % Get y-values from bounding ts/t curves
+                y_lower = digitized_data_sorted(idx_lower).interpolant(x_query);  % From lower ts/t
+                y_upper = digitized_data_sorted(idx_upper).interpolant(x_query);  % From upper ts/t
+        
+                % Linear interpolation between ts/t curves
+                t_lower = sorted_ts(idx_lower);
+                t_upper = sorted_ts(idx_upper);
+                if t_upper == t_lower
+                    obj.sr_s0(i) = y_lower;  % Exact match, no interpolation needed
+                else
+                    alpha = (ts_t - t_lower) / (t_upper - t_lower);  % Weighting factor
+                    obj.sr_s0(i) = y_lower + alpha * (y_upper - y_lower);  % Final interpolation
+                end
+            end
+        end
+        
+        function obj = interpretF(obj, F_data, wing)
+            % F_data = 
+            %   1×8 struct array with fields:
+            %     F, interpolated value
+            %     x_data, query value: As_bt = obj.As ./ (obj.b1_c .*
+            %     wing.cn) ./ obj.t2,
+            %     y_data, query value: ts_t = obj.ts/obj.t2, a constant
+            As_bt = obj.As ./ (obj.b1_c .* wing.cn) ./ obj.t2;
+            ts_t = obj.ts/obj.t2;
+            obj.F = zeros(size(As_bt));
+            
+            xq = As_bt;
+            yq = ts_t;
+            Xall = [];
+            Yall = [];
+            Fall = [];
+            for i = 1:length(F_data)
+                % Each contour line is F_data(i).x_data vs F_data(i).y_data 
+                % with a *constant* value F_data(i).F on that line.
+                x_i = F_data(i).x_data(:);
+                y_i = F_data(i).y_data(:);
+                Xall = [Xall; x_i];
+                Yall = [Yall; y_i];
+                Fall = [Fall; repmat(F_data(i).F, size(x_i))];
+            end
+            Finterp = scatteredInterpolant(Xall, Yall, Fall, 'natural', 'nearest');
+            for i = 1:length(xq)
+                obj.F(i) = Finterp(xq(i), yq);
+            end
+        end
+
     end
 end

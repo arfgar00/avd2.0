@@ -1,4 +1,4 @@
-function sigma_cr = findCricStress(wb,M,wing)
+function sigma_cr = findCricStress(wb,M,wing,material)
     %inputs: wb: wingbox object
     %        M:  moment, an array varies in y direction
     %        wing: wingGeometry object
@@ -8,6 +8,9 @@ function sigma_cr = findCricStress(wb,M,wing)
     c = wb.c_c.*wing.cn;
     b2 = wb.b2_c.*wing.cn;
     N = M./c./b2;
-    sigma0 = N./wb.t2;
+    E = material.E;
+    %sigma0 = N./wb.t2;
+    sigma0 = 3.62*E*(wb.t2./b2).^2;
     sigma_cr = sigma0.*sr_s0;
+    
 end
