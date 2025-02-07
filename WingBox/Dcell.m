@@ -1,4 +1,3 @@
-
 clc
 clear
 load('curvedPanel.mat');
@@ -33,7 +32,7 @@ for i = 1:numEntries
     % Store the polyfit coefficients in the struct
     fitResults(i).b_a = b_a;
     fitResults(i).coeffs = p;  % Store all polynomial coefficients
-    
+
     % Generate fitted y-values
     y_fit = polyval(p, x);
 
@@ -89,7 +88,7 @@ for i = 1:numEntries
     % Store the polyfit coefficients in the struct
     fitResultsa_b(i).a_b = a_b;
     fitResultsa_b(i).coeffs = p;  % Store all polynomial coefficients
-    
+
     % Generate fitted y-values
     y_fit = polyval(p, x);
 
@@ -118,19 +117,27 @@ hold off;
 % Save the fitted results for later use
 save('polyfit_results_curvedPanela_b.mat', 'fitResults');
 
-
-
-
-
-
-
 if b > a
     Ks = compute_Ks_b_a(a, b, R1, t1, fitResults)
 elseif a == b
     error("lmao")
 else 
-    Ks = compute_Ks_a_b(a, b, R1, t1, fitResults)
+    Ks = compute_Ks_a_b(a, b, R1, t1, fitResultsa_b)
 end
+
+E_Al2024 = 70;
+tau_cr = Ks*E_Al2024*10^9*(t1/1000/b)^2/10^6;
+
+tau_tres = 125;
+t = sqrt(tau_tres*10^6*b^2/Ks/(E_Al2024*10^9))*1000
+
+% weight check
+cellArea1 = 11000;
+Al_rho = 2.7;
+P_rib = 0.5 * cellArea1 * n_rib * Al_rho * 1000 / 10^9;
+skin = t / 1000 * b * 2 * bref * Al_rho * 1000;
+
+
 
 
 function Ks = compute_Ks_b_a(a, b, R1, t1, fitResults)
@@ -138,7 +145,7 @@ function Ks = compute_Ks_b_a(a, b, R1, t1, fitResults)
     if b <= a
         error('Invalid input: b must be greater than a.');
     end
-    
+
     % Compute x_val
     x_val = a / sqrt(R1 * t1);
     disp(['x_val = ', num2str(x_val)]);  % Debugging output
@@ -173,7 +180,7 @@ function Ks = compute_Ks_b_a(a, b, R1, t1, fitResults)
             % Evaluate both polynomial fits at x_val
             Ks_lower = polyval(fitResults(lower_idx).coeffs, x_val);
             Ks_upper = polyval(fitResults(upper_idx).coeffs, x_val);
-            
+
             % Perform linear interpolation between the two polynomial outputs
             w = (b_a_query - b_a_values(lower_idx)) / (b_a_values(upper_idx) - b_a_values(lower_idx));
             Ks = (1 - w) * Ks_lower + w * Ks_upper;
@@ -185,7 +192,7 @@ function Ks = compute_Ks_b_a(a, b, R1, t1, fitResults)
 end
 
 
-function Ks = compute_Ks_a_b(a, b, R1, t1, fitResults)
+function Ks = compute_Ks_a_b(a, b, R1, t1, fitResultsa_b)
     % Ensure b > a, otherwise return an error
     if a <= b
         error('Invalid input: b must be greater than a.');
@@ -199,19 +206,19 @@ function Ks = compute_Ks_a_b(a, b, R1, t1, fitResults)
         error('Invalid input: Outside of ESDU scope');
     end
 
-    % Extract all available a/b values from fitResults
+    % Extract all available a/b values from fitResultsa_b
     a_b_values = [fitResultsa_b.a_b];
 
     % Determine the appropriate polynomial fit based on a/b conditions
     a_b_query = a / b;  % Compute b/a ratio
-    disp(['b/a = ', num2str(b_a_query)]);  % Debugging output
+    disp(['b/a = ', num2str(a_b_query)]);  % Debugging output
 
     if a_b_query < 1
         error('b/a < 1 is not supported.');
     elseif a_b_query > 5
         % Use the polynomial fit where a/b = 5
         [~, idx] = min(abs(a_b_values - 5));
-        Ks = polyval(fitResults(idx).coeffs, x_val);
+        Ks = polyval(fitResultsa_b(idx).coeffs, x_val);
     else
         % Find the two closest a/b values surrounding b_a_query
         lower_idx = find(a_b_values <= a_b_query, 1, 'last'); % Lower bound
