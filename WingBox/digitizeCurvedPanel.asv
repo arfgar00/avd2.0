@@ -1,17 +1,15 @@
 clear
-pngname = 'CurvedPanelBuckling2.png';
-curvedPanel2 = struct(...
-        'b_a', {}, ... % Store the ts/t ratio
+pngname = 'CurvedPanelBuckling.png';
+digitized_data = struct(...
+        'ts_t_ratio', {}, ... % Store the ts/t ratio
         'x_data', {}, ...     % Store x-values (As/bt)
         'y_data', {});        % Store y-values (σ_cr/σ₀)
 
 %input data points from excel, and use spline interpolation.
 img = imread(pngname);
 % Display the image
-
-
+if x_pixel_min == [];
     figure(1);
-    clf;
     imshow(img);
     hold on; % Keep the image displayed while adding points
     display("click origin, max x, max y in sequence")
@@ -33,7 +31,7 @@ img = imread(pngname);
     
     map_y = @(y_pixel) y_data_min + (y_data_max - y_data_min) * ...
                        (y_pixel_max - y_pixel) / (y_pixel_max - y_pixel_min);
-
+end
 % Prompt the user to select points
 while true
     disp('Click on the plot to digitize points. Press ENTER when done.');
@@ -49,11 +47,10 @@ while true
     disp([x_data, y_data]);
     
     
-    F = input("input b_a: ");
-    n = length(curvedPanel2);
-    curvedPanel2(n+1).b_a = F;
-    curvedPanel2(n+1).x_data = x_data;
-    curvedPanel2(n+1).y_data = y_data;
+    F = input("input a_b: ");
+    n = length(curvedPanel);
+    curvedPanel(n+1).a_b = F;
+    curvedPanel(n+1).x_data = x_data;
+    curvedPanel(n+1).y_data = y_data;
     figure(1)
-    save("curvedPanel2.mat","curvedPanel2")
 end
