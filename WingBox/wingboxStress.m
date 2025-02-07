@@ -1,0 +1,43 @@
+classdef wingboxStress
+    properties
+        s_cr_local_skin
+        s_cr_global_skin
+        wb
+    end
+
+    methods
+        function obj = findGlobalStress(obj, M,wing,material)
+            %inputs: wb: wingbox object
+            %        M:  moment, an array varies in y direction
+            %        wing: wingGeometry object
+            %using the method in excel skin
+            wb = obj.wb;
+            sr_s0 = obj.wb.sr_s0; % sigma_critical/sigma_0, an array varies in y direction
+            c = wb.c_c.*wing.cn;
+            b2 = wb.b2_c.*wing.cn;
+            N = M./c./b2;
+            E = material.E;
+            %sigma0 = N./wb.t2;
+            sigma0 = 3.62*E*(wb.t2./b2).^2;
+            sigma_cr = sigma0.*sr_s0;
+            obj.s_cr_global_skin = sigma_cr;
+        end
+        
+
+        function obj = findLocalStress(obj,M,wing,material)
+            %inputs: wb: wingbox object
+            %        M:  moment, an array varies in y direction
+            %        wing: wingGeometry object
+            %using the method in excel skin
+            wb = obj.wb;
+            F = wb.F; % sigma_critical/sigma_0, an array varies in y direction
+            c = wb.c_c.*wing.cn;
+            b2 = wb.b2_c.*wing.cn;
+            N = M./c./b2;
+            Et = material.E;
+            L = wb.L;
+            sigma_cr = F.*sqrt(N.*Et./L);
+            obj.s_cr_local_skin = sigma_cr;
+        end
+    end
+end
