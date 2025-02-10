@@ -3,8 +3,6 @@ clc
 
 %spar section design
 
-
-
 %bending moment parameters
 
 D = 200;

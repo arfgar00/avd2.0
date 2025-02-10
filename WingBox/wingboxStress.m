@@ -3,6 +3,7 @@ classdef wingboxStress
         s_cr_local_skin
         s_cr_global_skin
         wb
+        s_0_global_skin
     end
 
     methods
@@ -20,6 +21,7 @@ classdef wingboxStress
             %sigma0 = N./wb.t2;
             sigma0 = 3.62*E*(wb.t2./b2).^2;
             sigma_cr = sigma0.*sr_s0;
+            obj.s_0_global_skin = sigma_0;
             obj.s_cr_global_skin = sigma_cr;
         end
         
