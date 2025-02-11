@@ -177,7 +177,7 @@ function t = Dcellfun(wb,wing,span,material,t1)
             % Find the two closest b/a values surrounding b_a_query
             lower_idx = find(b_a_values <= b_a_query, 1, 'last'); % Lower bound
             upper_idx = find(b_a_values >= b_a_query, 1, 'first'); % Upper bound
-            disp(['lower_idx = ', num2str(lower_idx), ', upper_idx = ', num2str(upper_idx)]);  % Debugging output
+            disp(['lower_idx = ', num2str(lower_idx), ', upper_idx = ', num2str(upper_idx)])  % Debugging output
     
             % If exact match found, use it directly
             if b_a_values(lower_idx) == b_a_query
@@ -217,11 +217,11 @@ function t = Dcellfun(wb,wing,span,material,t1)
     
         % Determine the appropriate polynomial fit based on a/b conditions
         a_b_query = a / b;  % Compute b/a ratio
-        disp(['b/a = ', num2str(a_b_query)]);  % Debugging output
+        disp(['a/b = ', num2str(a_b_query)]);  % Debugging output
     
         if a_b_query < 1
-            error('b/a < 1 is not supported.');
-        elseif a_b_query > 5
+            error('a/b < 1 is not supported.');
+        elseif a_b_query > 1e100
             % Use the polynomial fit where a/b = 5
             [~, idx] = min(abs(a_b_values - 5));
             Ks = polyval(fitResultsa_b(idx).coeffs, x_val);
@@ -232,15 +232,15 @@ function t = Dcellfun(wb,wing,span,material,t1)
             disp(['lower_idx = ', num2str(lower_idx), ', upper_idx = ', num2str(upper_idx)]);  % Debugging output
     
             % If exact match found, use it directly
-            if a_b_values(lower_idx) == b_a_query
+            if a_b_values(lower_idx) == a_b_query
                 Ks = polyval(fitResults(lower_idx).coeffs, x_val);
             else
                 % Evaluate both polynomial fits at x_val
-                Ks_lower = polyval(fitResults(lower_idx).coeffs, x_val);
-                Ks_upper = polyval(fitResults(upper_idx).coeffs, x_val);
+                Ks_lower = polyval(fitResultsa_b(lower_idx).coeffs, x_val);
+                Ks_upper = polyval(fitResultsa_b(upper_idx).coeffs, x_val);
     
                 % Perform linear interpolation between the two polynomial outputs
-                w = (b_a_query - a_b_values(lower_idx)) / (a_b_values(upper_idx) - a_b_values(lower_idx));
+                w = (a_b_query - a_b_values(lower_idx)) / (a_b_values(upper_idx) - a_b_values(lower_idx));
                 Ks = (1 - w) * Ks_lower + w * Ks_upper;
             end
         end

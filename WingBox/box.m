@@ -40,7 +40,7 @@ materialProperties = struct(...
 
 tensile_yield = 324;
 shear_yield = 187.1;
-compressive_yield = 350
+compressive_yield = 350;
 
 %torsion parameters
 
@@ -57,14 +57,10 @@ torsion_parameters = struct(...
     'h_w', 200, ...          % Spar height (mm)
     'G', 25000);             % Shear modulus (N/mm^2)
 
-torque = torsion_parameters.P / torsion_parameters.d
+torque = torsion_parameters.P / torsion_parameters.d;
 
 
-
-
-
-
-matrix1 = [2*torsion_parameters.An 2*torsion_parameters.Ar 0; torsion_parameters.h_w -torsion_parameters.h_w -torsion_parameters.h_w; 1/2/torsion_parameters.An/torsion_parameters.G * torsion_parameters.Sn / torsion_parameters.tn -1/2/torsion_parameters.Ar/torsion_parameters.G * torsion_parameters.Sr / torsion_parameters.tr torsion_parameters.h_w/torsion_parameters.t_w*1/2/torsion_parameters.An/torsion_parameters.G +  torsion_parameters.h_w/torsion_parameters.t_w*1/2/torsion_parameters.Ar/torsion_parameters.G ]
+matrix1 = [2*torsion_parameters.An 2*torsion_parameters.Ar 0; torsion_parameters.h_w -torsion_parameters.h_w -torsion_parameters.h_w; 1/2/torsion_parameters.An/torsion_parameters.G * torsion_parameters.Sn / torsion_parameters.tn -1/2/torsion_parameters.Ar/torsion_parameters.G * torsion_parameters.Sr / torsion_parameters.tr torsion_parameters.h_w/torsion_parameters.t_w*1/2/torsion_parameters.An/torsion_parameters.G +  torsion_parameters.h_w/torsion_parameters.t_w*1/2/torsion_parameters.Ar/torsion_parameters.G ];
 vector1 = [torque; torsion_parameters.P; 0];
 
 solution = matrix1 \ vector1;
@@ -77,5 +73,7 @@ tau_w = solution(3) / torsion_parameters.t_w;
 %add checks here
 P = (solution(1) - solution(2) - solution(3))*torsion_parameters.h_w;
 T = 2*torsion_parameters.An*solution(1) + 2*torsion_parameters.Ar*solution(2);
-theta_xn =
+theta_xn = 1/2/torsion_parameters.An/torsion_parameters.G * (torsion_parameters.Sn/torsion_parameters.tn * solution(1) + torsion_parameters.h_w/torsion_parameters.t_w * solution(3));
+theta_xr = 1/2/torsion_parameters.Ar/torsion_parameters.G * (torsion_parameters.Sr/torsion_parameters.tr * solution(2) - torsion_parameters.h_w/torsion_parameters.t_w * solution(3));
+
 
