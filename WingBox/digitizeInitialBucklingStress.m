@@ -1,9 +1,9 @@
 %input data points from excel, and use spline interpolation.
-img = imread('initialBucklingStress.png');
+img = imread('Farrorscr_s0.png');
 
 % Display the image
 figure(1);
-%imshow(img);
+imshow(img);
 hold on; % Keep the image displayed while adding points
 display("click origin, max x, max y in sequence")
 [x,y] = ginput(3)

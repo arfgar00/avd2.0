@@ -1,7 +1,11 @@
 classdef material
     properties
         E %Youngs modulus
-        
+        sigma_y %yield stress
+        nu     %Poissons ratio
+        G      %shear modulus
+        K      %BulkModulus
+        rho    %Density
     end
 
     methods
@@ -18,3 +22,17 @@ classdef material
         end
     end
 end
+
+% materialProperties = struct(...
+%     'Al2024', struct(...
+%         'YoungsModulus', 70, ...  % E (GPa)
+%         'PoissonRatio', 0.3, ...  % v
+%         'ShearModulus', 27, ...   % G (GPa)
+%         'BulkModulus', 58, ...    % K (GPa)
+%         'Density', 2780), ...     % Density (kg/m^3)
+%     'Al7075', struct(...
+%         'YoungsModulus', 73, ...  % E (GPa)
+%         'PoissonRatio', 0.36, ... % v
+%         'ShearModulus', 27, ...   % G (GPa)
+%         'BulkModulus', 87, ...    % K (GPa)
+%         'Density', 2810));       % Density (kg/m^3)
