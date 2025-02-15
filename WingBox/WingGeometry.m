@@ -123,12 +123,6 @@ classdef WingGeometry
             % Plot mid-line sweep angle for bottom half
             plot([0.5 * obj.cr xk5], [0 -obj.yk], "--", 'Color', color)
             plot([xk5 xt5], [-obj.yk -obj.s], "--", 'Color', color)
-        
-            % Finalize the plot
-            xlabel('X-axis');
-            ylabel('Y-axis');
-            axis equal;
-            hold off;
         end
 
 
