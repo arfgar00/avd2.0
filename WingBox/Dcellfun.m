@@ -1,4 +1,4 @@
-function t = Dcellfun(wb,wing,span,material,t1)
+function t = Dcellfun(wb,wing,span,material,t1,n_rib)
     %return the thickness of D cell
     data1 = load('curvedPanel.mat');
     curvedPanel = data1.curvedPanel;
@@ -6,7 +6,6 @@ function t = Dcellfun(wb,wing,span,material,t1)
     curvedPanel2 = data2.curvedPanel2;
 
     bref = span;
-    n_rib = 9; %pseudo ribs
     a = wb.a;
     b = wb.b_c.*wing.cn;
     R1 = wb.R_c.*wing.cn;
@@ -153,7 +152,7 @@ function t = Dcellfun(wb,wing,span,material,t1)
     
         % Compute x_val
         x_val = a / sqrt(R1 * t1);
-        disp(['x_val = ', num2str(x_val)]);  % Debugging output
+        %disp(['x_val = ', num2str(x_val)]);  % Debugging output
     
         if x_val < 0 | x_val > 20
             error('Invalid input: Outside of ESDU scope');
@@ -164,8 +163,8 @@ function t = Dcellfun(wb,wing,span,material,t1)
     
         % Determine the appropriate polynomial fit based on b/a conditions
         b_a_query = b / a;  % Compute b/a ratio
-        disp(b_a_query)
-        disp(['b/a = ', num2str(b_a_query)]);  % Debugging output
+        %disp(b_a_query)
+        %disp(['b/a = ', num2str(b_a_query)]);  % Debugging output
     
         if b_a_query < 1
             error('b/a < 1 is not supported.');
@@ -177,7 +176,7 @@ function t = Dcellfun(wb,wing,span,material,t1)
             % Find the two closest b/a values surrounding b_a_query
             lower_idx = find(b_a_values <= b_a_query, 1, 'last'); % Lower bound
             upper_idx = find(b_a_values >= b_a_query, 1, 'first'); % Upper bound
-            disp(['lower_idx = ', num2str(lower_idx), ', upper_idx = ', num2str(upper_idx)])  % Debugging output
+            %disp(['lower_idx = ', num2str(lower_idx), ', upper_idx = ', num2str(upper_idx)])  % Debugging output
     
             % If exact match found, use it directly
             if b_a_values(lower_idx) == b_a_query
@@ -194,7 +193,7 @@ function t = Dcellfun(wb,wing,span,material,t1)
         end
     
         % Debugging output to ensure Ks is returned
-        disp(['Computed Ks = ', num2str(Ks)]);
+        %disp(['Computed Ks = ', num2str(Ks)]);
     end
 
 
@@ -206,9 +205,9 @@ function t = Dcellfun(wb,wing,span,material,t1)
     
         % Compute x_val
         x_val = b / sqrt(R1 * t1);
-        disp(['x_val = ', num2str(x_val)]);  % Debugging output
+        %disp(['x_val = ', num2str(x_val)]);  % Debugging output
     
-        if x_val < 0 | x_val > 20
+        if x_val < 0 || x_val > 20
             error('Invalid input: Outside of ESDU scope');
         end
     

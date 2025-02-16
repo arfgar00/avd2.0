@@ -7,7 +7,7 @@ classdef wingboxStress
     end
 
     methods
-        function obj = findGlobalStress(obj, M,wing,material)
+        function obj = findGlobalStress(obj, M,wing,material, t_panel)
             %inputs: wb: wingbox object
             %        M:  moment, an array varies in y direction
             %        wing: wingGeometry object
@@ -18,9 +18,9 @@ classdef wingboxStress
             b2 = wb.b2_c.*wing.cn;
             N = M./c./b2;
             E = material.E;
-            %sigma0 = N./wb.t2;
-            sigma0 = 3.62*E*(wb.t2./b2).^2;
-            sigma_cr = sigma0.*sr_s0;
+            sigma_0 = N./t_panel;
+            %sigma_0 = 3.62*E*(wb.t2./b2).^2;
+            sigma_cr = sigma_0.*sr_s0;
             obj.s_0_global_skin = sigma_0;
             obj.s_cr_global_skin = sigma_cr;
         end
