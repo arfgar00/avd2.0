@@ -1,0 +1,100 @@
+function [c, ceq] = Non_linear(x)
+% This function is used to define the non-linear constraint values
+%
+% output:  c      - non-linear constraint
+%          ceq    - linear constraint
+% inputs:  x      - (t_skin, s_st, t_st, L_st, h_st)
+%          t_skin - skin thickness (m)
+%          s_st   - stringer spacing (m)
+%          t_st   - stringer thickness (m)
+%          L_st   - stringer flange (m)
+%          h_st   - stringer height (m)
+
+% Assign x values
+t_skin = x(1); % skin thickness (m)
+s_st = x(2);   % stringer spacing (m)
+t_st = x(3);   % stringer thickness (m)
+L_st = x(4);   % stringer flange (m)
+h_st = x(5);   % stringer height (m)
+
+% Recall the initial design parameters inside the function
+D = 6.38;
+r = D / 2;
+C = 2 * pi * r;
+rho_skin = 2780;
+rho_st = 2850;
+
+% Recall the initial design parameters inside the function
+% Q = 5.951582721709430e+05;  % Maximum shear force (N)
+% P = 0;                      % Maximum tangential load (N)
+M = -5.067912648168767e+06;   % Maximum bending moment (Nm)
+% T = 1.263599895277778e+06;  % Maximum torque (Nm)
+
+% Recall the maximum shear flow
+q = 7.914986682604700e+04;    % Maximum shear flow (Nm)
+
+% Find the number of the stringer
+n = ceil(C / s_st);           % Round-up for safety
+s_st = C / n;                 % real stringer spacing (m)
+
+% Compute the stringer section area
+B_st = 2 * (L_st * t_st) + (h_st - 2 * t_st) * t_st;
+
+% Find the y-location for each case
+y = zeros(1, n);
+
+for i = 1 : n
+
+    y(i) = r * cos(2 * pi * (i - 1) / n); % Evenly distributed
+
+end
+
+% Compute the skin collaborative area
+B_i = zeros(1, n);
+
+B_i(1) = (t_skin * s_st / 6) * (2 + y(end) / y(1)) + ...
+    (t_skin * s_st / 6) * (2 + y(2) / y(1)); % First stringer
+B_i(n) = (t_skin * s_st / 6) * (2 + y(n-1) / y(n)) + ...
+    (t_skin * s_st / 6) * (2 + y(1) / y(n)); % Last stringer
+
+for i = 2 : n - 1
+
+    B_i(i) = (t_skin * s_st / 6) * (2 + y(i-1) / y(i)) + ... 
+        (t_skin * s_st / 6) * (2 + y(i+1) / y(i));
+
+end
+
+% Compute total boom area for each stringer
+B_total = zeros(1, n);
+
+for i = 1 : n
+
+    B_total (i) = B_st + B_i(i);
+
+end
+
+% Compute the second moment of area, Ix
+B_total = zeros(1, n);
+
+for i = 1 : n
+
+    B_total (i) = B_st + B_i(i);
+
+end
+
+I_x = sum(B_total .* (y .^ 2));
+
+% Find the shear stress distribution
+sigma = zeros(1; n)
+
+for i = 1 : n
+
+    sigma = M / I_x * y(i);
+
+end
+
+
+% no linear constraint
+ceq = [];
+
+end
