@@ -15,23 +15,22 @@ t_skin = x(1); % skin thickness (m)
 s_st = x(2);   % stringer spacing (m)
 t_st = x(3);   % stringer thickness (m)
 L_st = x(4);   % stringer flange (m)
-h_st = x(5);   % stringer height (m)
 
 % Recall the initial design parameters inside the function
 D = 6.38;
 r = D / 2;
 C = 2 * pi * r;
+h_st = L_st / 0.3;
 E = 71300000000;
-q = s_st - 15 * t_skin;
+E_st = 71700000000;
+% q_st = s_st;
+q_st = s_st - L_st;
+sigma_skin = 455000000;
 
 % From ESDU datasheet 
 % (see Structure 3 Lecture Notes for k to K calculation)
 Kc = 3.69; % 3.62 for v = 0.3
 Ks = 4.93; % 4.83 for v = 0.3
-
-% Calcualte critical buckling stress
-shear_crit = Ks * E * (t_skin / q) ^ 2;
-sigma_crit = Kc * E * (t_skin / q) ^ 2;
 
 % Recall the initial design parameters inside the function
 % Q = 5.951582721709430e+05;  % Maximum shear force (N)
@@ -44,7 +43,7 @@ q = 7.914986682604700e+04;    % Maximum shear flow (Nm)
 
 % Find the number of the stringer
 n = ceil(C / s_st);           % Round-up for safety
-s_st = C / n;                 % real stringer spacing (m)
+s_st = C / n;
 
 % Compute the stringer section area
 B_st = 2 * (L_st * t_st) + (h_st - 2 * t_st) * t_st;
@@ -54,7 +53,7 @@ y = zeros(1, n);
 
 for i = 1 : n
 
-    y(i) = r * cos(2 * pi * (i - 1) / n); % Evenly distributed
+    y(i) = r * sin((2 * pi * (i - 1)) / n);
 
 end
 
@@ -72,6 +71,8 @@ for i = 2 : n - 1
         (t_skin * s_st / 6) * (2 + y(i+1) / y(i));
 
 end
+
+B_i(1) = B_i(n);
 
 % Compute total boom area for each stringer
 B_total = zeros(1, n);
@@ -91,7 +92,7 @@ for i = 1 : n
 end
 
 % Find the shear stress distribution
-sigma = zeros(1; n)
+sigma = zeros(1, n);
 
 for i = 1 : n
 
@@ -108,10 +109,42 @@ sigma_ben = abs(max(sigma));
 % Find the maximum shear stress
 shear = q / t_skin;
 
+% Critical buckling stress of the skin
+shear_crit = Ks * E * ((t_skin / q_st) ^ 2);
+sigma_crit = Kc * E * ((t_skin / q_st) ^ 2);
+
+% Critical buckling stress of the stringer
+sigma_crit_st = Kc * E_st * ((t_st / h_st) ^ 2);
+
+% Find Farrar's efficiency
+As_bt = B_st / (s_st * t_skin);
+ts_t = t_st / t_skin;
+Farrar = interpF(As_bt, ts_t);
+
 % Define the inequality constriant
-c(1) = sigma_ten - 
+%
+% tensile stress
+c(1) = sigma_ten - sigma_skin;
+
+% compression-shear interaction
+c(2) = (shear / shear_crit) ^ 2 + sigma_ben / sigma_crit - 0.9999;
+% c(3) = 0.985 - ((shear / shear_crit) ^ 2 + sigma_ben / sigma_crit);
+
+% Critical buckling stress of the stringer
+c(3) = sigma_ben - sigma_crit_st;
+
+% Stringer design
+c(4) = 2 * t_st - h_st;
+
+% Farrar's efficiency
+c(5) = As_bt - 1.99;
+c(6) = ts_t - 1.79;
+c(7) = 0.65 - Farrar;
 
 % Define the equality constraint
+%
+% stringer must be uniformly spacing
+% ceq = mod(C, s_st) / C;
 ceq = [];
 
 end
