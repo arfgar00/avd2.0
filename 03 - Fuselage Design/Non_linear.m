@@ -23,8 +23,8 @@ C = 2 * pi * r;
 h_st = L_st / 0.3;
 E = 71300000000;
 E_st = 71700000000;
-% q_st = s_st;
-q_st = s_st - L_st;
+q_st = s_st;
+% q_st = s_st - L_st;
 sigma_skin = 455000000;
 
 % From ESDU datasheet 
@@ -89,6 +89,7 @@ I_x = 0;
 for i = 1 : n
 
     I_x = I_x + B_total(i) * (y(i) ^ 2);
+
 end
 
 % Find the shear stress distribution
@@ -96,7 +97,7 @@ sigma = zeros(1, n);
 
 for i = 1 : n
 
-    sigma = (M / I_x) * y(i);
+    sigma(i) = (M / I_x) * y(i);
 
 end
 
@@ -140,6 +141,7 @@ c(4) = 2 * t_st - h_st;
 c(5) = As_bt - 1.99;
 c(6) = ts_t - 1.79;
 c(7) = 0.65 - Farrar;
+% c(7) = 0.75 - Farrar;
 
 % Define the equality constraint
 %

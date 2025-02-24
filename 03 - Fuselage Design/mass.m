@@ -30,6 +30,7 @@ m_skin = rho_skin * (C * t_skin);
 
 % Apply penalty if the number of stringers is excessive
 min_spacing = 0.16;
+% min_spacing = 0.10;
 penalty_factor = 500^2;
 
 if s_st < min_spacing
