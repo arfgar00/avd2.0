@@ -1,10 +1,10 @@
 # avd2.0
 
 Is this the real life? 👀👀👀 Is this just AVD? 😫😫😫
-Caught in a fmincon💀💀💀, no escape from GlobalSearch 🫵🫵🫵
+Caught in a fmincon 💀💀💀, no escape from GlobalSearch 🫵🫵🫵
 Open your eyes 👁👁 look up at the references and see 😢😢😢
 I'm just a poor boy 😭😭😭 I need no sympathy 😡😡😡
-Because I'm easy come 🚶‍➡️🚶‍➡️🚶‍➡️, easy go 🚶🚶🚶, little high 🕺🕺🕺, little low🧎‍➡️🧎‍➡️🧎‍➡️
+Because I'm easy come 🚶‍➡️🚶‍➡️🚶‍➡️, easy go 🚶🚶🚶, little high 🕺🕺🕺, little low 🧎‍➡️🧎‍➡️🧎‍➡️
 Any way the convergence error 🥷🥷🥷 doesn't really matter to me, to me 🗣🗣🗣
 
 Errikos, just fixed a bug 🧐🧐🧐
