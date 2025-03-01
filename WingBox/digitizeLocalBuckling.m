@@ -1,5 +1,5 @@
 clear
-pngname = 'Farrorscr_s0.png';
+pngname = 'BucklingCoefficientZStringer.png';
 scr_s0 = struct(...
         'ts_t_ratio', {}, ...
         'x_data', {}, ...     % Store x-values (As/bt)

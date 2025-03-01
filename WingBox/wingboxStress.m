@@ -13,13 +13,12 @@ classdef wingboxStress
             %        wing: wingGeometry object
             %using the method in excel skin
             wb = obj.wb;
-            sr_s0 = obj.wb.sr_s0; % sigma_critical/sigma_0, an array varies in y direction
+            sr_s0 = wb.sr_s0; % sigma_critical/sigma_0, an array varies in y direction
             c = wb.c_c.*wing.cn;
             b2 = wb.b2_c.*wing.cn;
             N = M./c./b2;
             E = material.E;
-            sigma_0 = N./t_panel;
-            %sigma_0 = 3.62*E*(wb.t2./b2).^2;
+            sigma_0 = wb.Ks_Upper.*E.*(wb.t_Upper./(wb.b1_c.*wing.cn)).^2;
             sigma_cr = sigma_0.*sr_s0;
             obj.s_0_global_skin = sigma_0;
             obj.s_cr_global_skin = sigma_cr;
