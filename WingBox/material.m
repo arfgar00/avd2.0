@@ -6,6 +6,8 @@ classdef material
         G      %shear modulus
         K      %BulkModulus
         rho    %Density
+        sigma_y_tensile
+        price
     end
 
     methods

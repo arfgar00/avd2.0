@@ -7,22 +7,32 @@ classdef wingbox
         tR %thickness of rear spar
         c_c  %total width of main cell, normalized by chord length
         b1_c  %separation between stringers on main cell, normalized by chord length
+        b1_c_Lower
+        bs_Upper
+        bs_Lower
         b_c   %length of D Cell
         R_c  %radius of curvature of D Cell
-        a %separation between ribs
+        a %Web panel spacing
         b2_c % height of front spar, normalized by chord length
-        ts %thickness of stringers
+        ts_Upper %thickness of stringers
+
+        a_D %pseudoribs pitch in D cell
+        ts_Lower %thickness of stringers
+
         ds %flange width of Z stringer (of one - on the Z)
         hs %height of Z stinger
+        hs_Lower 
+        ds_Lower
         As %area of one stringer
         sr_s0 %sigma_r/sigma_0, looked up from catchpole diagram, array
+        As_Lower %area of one stringer
+        sr_s0_Lower %sigma_r/sigma_0, looked up from catchpole diagram, array
         N %number of stringers
+        N_Lower %number of stringers
         F %Farror factor, an array in spanwise
+        F_Lower
         
-
-        t1_spar %spar flange thickness
-        t2_spar %spar web thickness
-        b_spar  %spar flange width
+        y_sparS %spar stiffeners y
 
         An   %area of the D cell
         Ar   %area of the main cell
@@ -33,6 +43,14 @@ classdef wingbox
         L %rib spacing, an array in spanwise, same length as wing.cn
         Nrib % number of ribs
         yrib % y location of each rib
+        Nprib
+
+        tr  % thickness of each rib
+        tD % thickness of D cell skin
+        tr_D %thickness of D cell pseduribs
+
+        Ks_Upper
+        Ks_Lower
     end
 
     methods
@@ -61,7 +79,11 @@ classdef wingbox
         end
 
         function obj = calcStringerArea(obj)
-            obj.As = (obj.hs + 2 * obj.ds)*obj.ts;
+            obj.As = (obj.hs + 2 .* obj.ds).*obj.ts_Upper;
+        end
+
+        function obj = calcStringerArea_Lower(obj)
+            obj.As_Lower = (obj.hs_Lower + 2 .* obj.ds_Lower).*obj.ts_Lower;
         end
 
         function obj = calcCellArea(obj,wing)
@@ -80,7 +102,7 @@ classdef wingbox
             R = obj.R_c;
             b2 = obj.b2_c;
             b = obj.b_c;
-            x_upper = linspace(0,b,30);
+            x_upper = linspace(b-R,b,30);
             y_upper = sqrt(R^2 - (x_upper - b).^2) + b2/2-R;
 
             y_lower = -y_upper;
@@ -151,7 +173,7 @@ classdef wingbox
 
         function obj = interpsr_s0(obj, sr_s0, wing)
             As_bt = obj.As ./ (obj.b1_c .* wing.cn) ./ obj.t_Upper;
-            ts_t = obj.ts / obj.t_Upper;
+            ts_t = obj.ts_Upper / obj.t_Upper;
             obj.sr_s0 = zeros(size(As_bt));
             
             xq = As_bt;
@@ -177,7 +199,7 @@ classdef wingbox
                 
         function obj = interpretF(obj, F_data, wing)
             As_bt = obj.As ./ (obj.b1_c .* wing.cn) ./ obj.t_Upper;
-            ts_t = obj.ts / obj.t_Upper;
+            ts_t = obj.ts_Upper / obj.t_Upper;
             obj.F = zeros(size(As_bt));
             
             xq = As_bt;
@@ -237,22 +259,89 @@ classdef wingbox
             obj.yrib = [-flip(y), y];
         end
 
-        function plotRibs(obj,wing)
+        function plotRibs(obj, wing)
             hold on
+            D = wing.bodyDiameter;
+            R = D/2;
+            fs = obj.b_c;
+            rs = obj.b_c + obj.c_c;
+            froot = wing.LEx(R) + wing.c_at_y(R)*fs;
+            ftip  = wing.LEx(wing.b/2) + wing.c_at_y(wing.b/2)*fs;
+            rroot = wing.LEx(R) + wing.c_at_y(R)*rs;
+            rtip  = wing.LEx(wing.b/2) + wing.c_at_y(wing.b/2)*rs;
+            
+            P_fs1 = [ftip, wing.b/2];
+            P_fs2 = [froot, R];
+            P_rs1 = [rtip, wing.b/2];
+            P_rs2 = [rroot, R];
+            
+            v_spar = P_fs1 - P_fs2;
+            v_perp = [v_spar(2), -v_spar(1)]/norm(v_spar);
+            
             for i = 1:length(obj.yrib)
-                thisy = obj.yrib(i);
-                if thisy > wing.b/2
-                    thisy = wing.b/2;
-                elseif thisy < -wing.b/2
-                    thisy = -wing.b/2;
+                y_rib = obj.yrib(i);
+                sign_y = sign(y_rib);
+                y_val = abs(y_rib);
+                if y_val < R || y_val > wing.b/2
+                    continue;
                 end
-                xstart = wing.LEx(thisy);
-                chord = wing.c_at_y(thisy);
-                plot([xstart xstart + chord],[obj.yrib(i) obj.yrib(i)],'r-')
+                t_interp = (y_val - R) / ((wing.b/2) - R);
+                x_front = froot + t_interp*(ftip - froot);
+                P_front = [x_front, y_val];
+                
+                A = P_front; d = v_perp;
+                candidates = []; t_candidates = [];
+                
+                % Rear spar intersection
+                B = P_rs1; e = P_rs2 - P_rs1;
+                denom = d(1)*e(2) - d(2)*e(1);
+                if abs(denom) > 1e-6
+                    diff = B - A;
+                    t_val = (diff(1)*e(2) - diff(2)*e(1)) / denom;
+                    u_val = (diff(1)*d(2) - diff(2)*d(1)) / denom;
+                    if t_val > 0 && u_val >= 0 && u_val <= 1
+                        candidates(end+1,:) = A + t_val*d; %#ok<AGROW>
+                        t_candidates(end+1) = t_val;
+                    end
+                end
+                
+                % Top plate intersection
+                if abs(d(2)) > 1e-6
+                    t_top = (wing.b/2 - A(2)) / d(2);
+                    if t_top > 0
+                        P_top = A + t_top*d;
+                        if (P_top(1) >= min(ftip, rtip)) && (P_top(1) <= max(ftip, rtip))
+                            candidates(end+1,:) = P_top;
+                            t_candidates(end+1) = t_top;
+                        end
+                    end
+                end
+                
+                % Bottom plate intersection
+                if abs(d(2)) > 1e-6
+                    t_bot = (R - A(2)) / d(2);
+                    if t_bot > 0
+                        P_bot = A + t_bot*d;
+                        if (P_bot(1) >= min(froot, rroot)) && (P_bot(1) <= max(froot, rroot))
+                            candidates(end+1,:) = P_bot;
+                            t_candidates(end+1) = t_bot;
+                        end
+                    end
+                end
+                
+                if isempty(t_candidates)
+                    continue;
+                end
+                [~, idx] = min(t_candidates);
+                P_end = candidates(idx,:);
+                
+                P_front(2) = P_front(2) * sign_y;
+                P_end(2) = P_end(2) * sign_y;
+                plot([P_front(1) P_end(1)], [P_front(2) P_end(2)], 'r-', 'LineWidth', 1.5)
                 hold on
             end
-
         end
+
         
         function obj = mapRibSpacing(obj, wing, D)
             % variable to assign: obj.L
@@ -301,21 +390,76 @@ classdef wingbox
             obj.L = L;
         end
 
+        function obj = interpsr_s0_Lower(obj, sr_s0, wing)
+            As_bt = obj.As_Lower ./ (obj.b1_c_Lower .* wing.cn) ./ obj.t_Lower;
+            ts_t = obj.ts_Lower / obj.t_Lower;
+            obj.sr_s0 = zeros(size(As_bt));
+            
+            xq = As_bt;
+            zq = ts_t .* ones(size(xq)); % Expand ts_t to match xq dimensions
+            
+            % Aggregate data from sr_s0 (unsorted)
+            X_all = [];
+            Z_all = [];
+            Y_all = [];
+            for i = 1:numel(sr_s0)
+                ts_t_ratio = sr_s0(i).ts_t_ratio; % Use actual field name from your struct
+                x_vals = sr_s0(i).x_data(:);
+                y_vals = sr_s0(i).y_data(:);
+                X_all = [X_all; x_vals];
+                Z_all = [Z_all; repmat(ts_t_ratio, numel(x_vals), 1)]; % Match x_vals size
+                Y_all = [Y_all; y_vals];
+            end
+            
+            % Build interpolant and evaluate
+            sr_interpolant = scatteredInterpolant(X_all, Z_all, Y_all, 'linear', 'none');
+            obj.sr_s0_Lower = sr_interpolant(xq, zq);
+        end
+                
+        function obj = interpretF_Lower(obj, F_data, wing)
+            As_bt = obj.As_Lower ./ (obj.b1_c_Lower .* wing.cn) ./ obj.t_Lower;
+            ts_t = obj.ts_Lower / obj.t_Lower;
+            obj.F = zeros(size(As_bt));
+            
+            xq = As_bt;
+            yq = ts_t.*ones(size(xq));
+            
+            % Collect all (x, y) points and their corresponding F values from contours
+            X_all = [];
+            Y_all = [];
+            F_all = [];
+            for i = 1:numel(F_data)
+                F_val = F_data(i).F;
+                x_vals = F_data(i).x_data(:); % Ensure column vector
+                y_vals = F_data(i).y_data(:); 
+                % Append data
+                X_all = [X_all; x_vals];
+                Y_all = [Y_all; y_vals];
+                F_all = [F_all; repmat(F_val, numel(x_vals), 1)];
+            end
+            
+            % Create interpolant (linear interpolation, no extrapolation)
+            F_interpolant = scatteredInterpolant(X_all, Y_all, F_all, 'linear', 'none');
+            
+            % Interpolate at query points and assign to obj.F
+            obj.F_Lower = F_interpolant(xq, yq);
+        end
+
         function plotWingBox(obj,wing,D)
             fs = obj.b_c; %front spar percentage
             rs = obj.b_c + obj.c_c; %rear spar percentage
             R = D/2;
             froot = wing.LEx(R) + wing.c_at_y(R)*fs;
             rroot = wing.LEx(R) + wing.c_at_y(R)*rs;
-            plot([froot rroot],[R R],'b')
+            plot([froot rroot],[R R],'b','LineWidth',1.7)
             hold on
             ftip = wing.LEx(wing.b/2) + wing.c_at_y(wing.b/2)*fs;
             rtip = wing.LEx(wing.b/2) + wing.c_at_y(wing.b/2)*rs;
-            plot([ftip rtip],[wing.b/2 wing.b/2],'b')
+            plot([ftip rtip],[wing.b/2 wing.b/2],'b','LineWidth',1.7)
             hold on
-            plot([ftip froot],[wing.b/2 R],'b')
+            plot([ftip froot],[wing.b/2 R],'b','LineWidth',1.7)
             hold on
-            plot([rtip rroot],[wing.b/2 R],'b')
+            plot([rtip rroot],[wing.b/2 R],'b','LineWidth',1.7)
         end
 
         function plotStringer(obj,wing,D)
@@ -348,6 +492,5 @@ classdef wingbox
                 end
             end
         end
-
     end
 end
